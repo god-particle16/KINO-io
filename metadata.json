@@ -1,0 +1,6 @@
+{
+  "name": "CinePulse - Personal Media Tracker",
+  "description": "Ultra-clean personal movie, TV series, and anime tracker inspired by Letterboxd and Trakt with diary logs, watchlists, and library management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
