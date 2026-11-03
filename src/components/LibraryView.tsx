@@ -18,6 +18,7 @@ import {
 import { useMedia } from '../context/MediaContext.tsx';
 import { MediaCard } from './MediaCard.tsx';
 import { MediaCategory } from '../types/media.ts';
+import { PosterImage } from './PosterImage.tsx';
 
 export const LibraryView: React.FC = () => {
   const {
@@ -27,10 +28,10 @@ export const LibraryView: React.FC = () => {
     removeCustomList,
     toggleItemInCustomList,
     openAddModalWithPreset,
+    librarySelectedList: selectedList,
+    setLibrarySelectedList: setSelectedList,
   } = useMedia();
 
-  // Active Selected List: 'watched' | 'watchlist' | 'favorites' | string (custom list name)
-  const [selectedList, setSelectedList] = useState<string>('watched');
   const [categoryFilter, setCategoryFilter] = useState<'all' | MediaCategory>('all');
 
   // Custom List creation inline state
@@ -396,17 +397,14 @@ export const LibraryView: React.FC = () => {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-7 h-10 bg-slate-800 rounded overflow-hidden shrink-0 border border-white/[0.06]">
-                        {item.posterUrl ? (
-                          <img
-                            src={item.posterUrl}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-500 font-bold">
-                            {item.category[0].toUpperCase()}
-                          </div>
-                        )}
+                        <PosterImage
+                          url={item.posterUrl}
+                          title={item.title}
+                          category={item.category}
+                          releaseYear={item.releaseYear}
+                          size="xs"
+                          className="w-full h-full"
+                        />
                       </div>
                       <div className="min-w-0">
                         <span className="text-xs font-semibold text-slate-200 group-hover:text-purple-300 block truncate">

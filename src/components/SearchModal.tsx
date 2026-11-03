@@ -6,8 +6,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Plus, Film, Tv, Sparkles, Check } from 'lucide-react';
 import { useMedia } from '../context/MediaContext.tsx';
-import { tmdbService } from '../services/tmdbService.ts';
+import { tmdbService } from '../services/tmdb.ts';
 import { MediaCategory, MediaItem, TMDBMediaResult, WatchStatus } from '../types/media.ts';
+import { PosterImage } from './PosterImage.tsx';
 
 export const SearchModal: React.FC = () => {
   const {
@@ -16,6 +17,7 @@ export const SearchModal: React.FC = () => {
     items,
     setViewingItem,
     openAddModalWithPreset,
+    setIsSettingsModalOpen,
     setIsTMDBModalOpen,
     addItem,
   } = useMedia();
@@ -217,20 +219,14 @@ export const SearchModal: React.FC = () => {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-12 bg-slate-800 rounded overflow-hidden shrink-0">
-                        {item.posterUrl ? (
-                          <img
-                            src={item.posterUrl}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-500 text-[10px]">
-                            {item.category[0].toUpperCase()}
-                          </div>
-                        )}
+                        <PosterImage
+                          url={item.posterUrl}
+                          title={item.title}
+                          category={item.category}
+                          releaseYear={item.releaseYear}
+                          size="xs"
+                          className="w-full h-full"
+                        />
                       </div>
                       <div className="truncate">
                         <div className="text-sm font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors truncate">
@@ -271,7 +267,7 @@ export const SearchModal: React.FC = () => {
                     type="button"
                     onClick={() => {
                       setIsSearchModalOpen(false);
-                      setIsTMDBModalOpen(true);
+                      setIsSettingsModalOpen(true);
                     }}
                     className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-slate-200 rounded-lg text-xs font-medium cursor-pointer transition-colors"
                   >
@@ -314,26 +310,14 @@ export const SearchModal: React.FC = () => {
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
                         <div className="w-10 h-14 bg-slate-800 rounded overflow-hidden shrink-0">
-                          {result.posterUrl ? (
-                            <img
-                              src={result.posterUrl}
-                              alt={result.title}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
-                              {result.category === 'movie' ? (
-                                <Film className="w-4 h-4" />
-                              ) : result.category === 'tv' ? (
-                                <Tv className="w-4 h-4" />
-                              ) : (
-                                <Sparkles className="w-4 h-4" />
-                              )}
-                            </div>
-                          )}
+                          <PosterImage
+                            url={result.posterUrl}
+                            title={result.title}
+                            category={result.category}
+                            releaseYear={result.releaseYear}
+                            size="xs"
+                            className="w-full h-full"
+                          />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-baseline gap-2">

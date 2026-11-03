@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Search, Film } from 'lucide-react';
+import { Search, Settings } from 'lucide-react';
 import { useMedia } from '../context/MediaContext.tsx';
 import { ActiveTab } from '../types/media.ts';
 import { KinoLogo } from './KinoLogo.tsx';
@@ -14,13 +14,14 @@ export const Navbar: React.FC = () => {
     activeTab,
     setActiveTab,
     setIsSearchModalOpen,
+    setIsSettingsModalOpen,
     setIsTMDBModalOpen,
   } = useMedia();
 
   const navLinks: { id: ActiveTab; label: string }[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'diary', label: 'Diary' },
-    { id: 'watchlists', label: 'Watchlists' },
+    { id: 'watchlists', label: 'Watchlist' },
     { id: 'library', label: 'My Library' },
   ];
 
@@ -69,8 +70,8 @@ export const Navbar: React.FC = () => {
           })}
         </nav>
 
-        {/* Zone 3: Search & Primary Action */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Zone 3: Search & Settings Actions */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* Search Bar trigger */}
           <button
             onClick={() => setIsSearchModalOpen(true)}
@@ -82,6 +83,16 @@ export const Navbar: React.FC = () => {
             <kbd className="hidden sm:inline-block font-mono text-[10px] px-1.5 py-0.5 bg-white/[0.06] rounded border border-white/[0.08] text-slate-400">
               /
             </kbd>
+          </button>
+
+          {/* Settings Button */}
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="p-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] rounded-lg text-slate-400 hover:text-slate-200 text-xs transition-all cursor-pointer focus:outline-none focus:border-indigo-500/50"
+            title="Settings & Backup"
+            aria-label="Settings & Backup"
+          >
+            <Settings className="w-4 h-4 text-slate-300 hover:text-white transition-colors" />
           </button>
         </div>
       </div>

@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Bookmark, Heart, ArrowUpDown, Sparkles } from 'lucide-react';
+import { Bookmark, ArrowUpDown, Sparkles } from 'lucide-react';
 import { useMedia } from '../context/MediaContext.tsx';
 import { MediaCard } from './MediaCard.tsx';
 import { MediaCategory } from '../types/media.ts';
@@ -13,7 +13,6 @@ import { PickMovieButton } from './PickMovieButton.tsx';
 export const WatchlistsView: React.FC = () => {
   const {
     items,
-    watchlistSubTab,
     openAddModalWithPreset,
     setIsSearchModalOpen,
   } = useMedia();
@@ -21,12 +20,10 @@ export const WatchlistsView: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<'all' | MediaCategory>('all');
   const [sortOrder, setSortOrder] = useState<'oldest_to_newest' | 'newest_to_oldest'>('oldest_to_newest');
 
-  const watchLaterItems = items.filter((item) => item.inWatchlist);
-  const favoriteItems = items.filter((item) => item.isFavorite);
+  // Watch List items strictly
+  const watchListItems = items.filter((item) => item.inWatchlist || item.status === 'watch_later');
 
-  const currentList = watchlistSubTab === 'favorites' ? favoriteItems : watchLaterItems;
-
-  const filteredItems = currentList.filter((item) => {
+  const filteredItems = watchListItems.filter((item) => {
     return categoryFilter === 'all' || item.category === categoryFilter;
   });
 
@@ -109,20 +106,12 @@ export const WatchlistsView: React.FC = () => {
       {/* Items Grid */}
       {sortedItems.length === 0 ? (
         <div className="p-12 text-center bg-[#0c0e15] border border-white/[0.04] rounded-xl space-y-3">
-          {watchlistSubTab === 'watch_later' ? (
-            <Bookmark className="w-8 h-8 text-slate-600 mx-auto" />
-          ) : (
-            <Heart className="w-8 h-8 text-slate-600 mx-auto" />
-          )}
+          <Bookmark className="w-8 h-8 text-slate-600 mx-auto" />
           <p className="text-sm font-semibold text-slate-300">
-            {watchlistSubTab === 'watch_later'
-              ? 'Your Watch List is empty'
-              : 'No favorites added yet'}
+            Your Watch List is empty
           </p>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            {watchlistSubTab === 'watch_later'
-              ? 'Save movies, series, or anime to your watch list by clicking the bookmark icon on any title.'
-              : 'Mark masterworks and top-tier films with the heart icon to save them to your personal favorites collection.'}
+            Save movies, series, or anime to your watch list by clicking the bookmark icon on any title.
           </p>
           <div className="flex items-center justify-center gap-2 pt-2">
             <button
@@ -134,8 +123,7 @@ export const WatchlistsView: React.FC = () => {
             <button
               onClick={() =>
                 openAddModalWithPreset({
-                  inWatchlist: watchlistSubTab === 'watch_later',
-                  isFavorite: watchlistSubTab === 'favorites',
+                  inWatchlist: true,
                   status: 'watch_later',
                 })
               }

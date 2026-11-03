@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useMedia } from '../context/MediaContext.tsx';
 import { MediaItem } from '../types/media.ts';
+import { PosterImage } from './PosterImage.tsx';
 
 interface PickResult {
   movie: MediaItem | null;
@@ -284,10 +285,14 @@ export const RandomPickerModal: React.FC = () => {
                     {item ? (
                       <>
                         {/* Poster Image */}
-                        <img
-                          src={item.posterUrl}
-                          alt={item.title}
-                          className="w-full h-full object-cover select-none pointer-events-none filter brightness-95"
+                        <PosterImage
+                          url={item.posterUrl}
+                          title={item.title}
+                          category={item.category}
+                          releaseYear={item.releaseYear}
+                          size="lg"
+                          className="w-full h-full select-none pointer-events-none"
+                          imgClassName="filter brightness-95"
                         />
 
                         {/* Top Gradient Header */}

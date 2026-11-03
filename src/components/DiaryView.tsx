@@ -8,6 +8,7 @@ import { Calendar, RotateCcw } from 'lucide-react';
 import { useMedia } from '../context/MediaContext.tsx';
 import { RatingStars } from './RatingStars.tsx';
 import { MediaCategory } from '../types/media.ts';
+import { PosterImage } from './PosterImage.tsx';
 
 interface FlattenedDiaryRow {
   uniqueKey: string;
@@ -156,20 +157,15 @@ export const DiaryView: React.FC = () => {
 
                           {/* Poster Thumbnail */}
                           <div className="w-11 h-16 bg-slate-800 rounded-md overflow-hidden shrink-0 border border-white/[0.06]">
-                            {row.mediaItem.posterUrl ? (
-                              <img
-                                src={row.mediaItem.posterUrl}
-                                alt={row.mediaItem.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                onError={(e) => {
-                                  (e.target as HTMLElement).style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
-                                {row.mediaItem.category[0].toUpperCase()}
-                              </div>
-                            )}
+                            <PosterImage
+                              url={row.mediaItem.posterUrl}
+                              title={row.mediaItem.title}
+                              category={row.mediaItem.category}
+                              releaseYear={row.mediaItem.releaseYear}
+                              size="xs"
+                              className="w-full h-full"
+                              imgClassName="group-hover:scale-105 transition-transform"
+                            />
                           </div>
 
                           {/* Title and Unboxed Metadata */}

@@ -22,6 +22,7 @@ import { useMedia } from '../context/MediaContext.tsx';
 import { MediaItem } from '../types/media.ts';
 import { tmdbService } from '../services/tmdb.ts';
 import { MediaCard } from './MediaCard.tsx';
+import { PosterImage } from './PosterImage.tsx';
 
 // Curated list of popular movies, series, and anime posters for the animated background
 const POPULAR_TILED_SLIDES = [
@@ -92,6 +93,7 @@ export const DashboardView: React.FC = () => {
     items,
     setActiveTab,
     setWatchlistSubTab,
+    setLibrarySelectedList,
     openAddModalWithPreset,
     setViewingItem,
   } = useMedia();
@@ -323,30 +325,22 @@ export const DashboardView: React.FC = () => {
           className={`absolute top-1/2 -translate-y-1/2 w-64 sm:w-80 md:w-96 aspect-[2/3] rounded-[28px] sm:rounded-[36px] overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform-gpu select-none bg-[#101322] ${transformStyle} ${zIndexClass} ${opacityClass}`}
         >
           {/* Poster image */}
-          {item.posterUrl ? (
-            <img
-              src={item.posterUrl}
-              alt={item.title}
-              className="w-full h-full object-cover select-none pointer-events-none filter brightness-95 contrast-105"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-950 to-slate-900 p-6 text-center">
-              <Film className="w-16 h-16 text-indigo-400/40 mb-3" />
-              <span className="text-base font-bold text-white truncate max-w-full">
-                {item.title}
-              </span>
-            </div>
-          )}
+          <PosterImage
+            url={item.posterUrl}
+            title={item.title}
+            category={item.category}
+            releaseYear={item.releaseYear}
+            size="lg"
+            className="w-full h-full select-none pointer-events-none"
+            imgClassName="filter brightness-95 contrast-105"
+          />
 
           {/* Scrim Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent pointer-events-none z-10" />
 
           {/* Clean Overlay for Center Active Card */}
           {isCenter && (
-            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6 flex flex-col justify-end text-left pointer-events-auto">
+            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6 flex flex-col justify-end text-left pointer-events-auto z-20">
               <h3 className="text-xl sm:text-2xl font-bold text-white drop-shadow-md truncate leading-snug">
                 {item.title}
               </h3>
@@ -496,8 +490,8 @@ export const DashboardView: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              setWatchlistSubTab('favorites');
-              setActiveTab('watchlists');
+              setLibrarySelectedList('favorites');
+              setActiveTab('library');
             }}
             className="p-4 bg-[#0b0e1a]/70 backdrop-blur-xl border border-white/[0.12] hover:border-rose-500/50 rounded-xl flex flex-col justify-between transition-all shadow-xl shadow-black/40 text-left cursor-pointer group"
           >

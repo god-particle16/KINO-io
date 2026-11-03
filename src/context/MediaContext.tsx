@@ -59,6 +59,8 @@ interface MediaContextType {
   setActiveTab: (tab: ActiveTab) => void;
   watchlistSubTab: WatchlistSubTab;
   setWatchlistSubTab: (sub: WatchlistSubTab) => void;
+  librarySelectedList: string;
+  setLibrarySelectedList: (list: string) => void;
 
   // Search & Modals
   isSearchModalOpen: boolean;
@@ -71,6 +73,8 @@ interface MediaContextType {
   setViewingItem: (item: MediaItem | null) => void;
   isTMDBModalOpen: boolean;
   setIsTMDBModalOpen: (open: boolean) => void;
+  isSettingsModalOpen: boolean;
+  setIsSettingsModalOpen: (open: boolean) => void;
   isRandomPickerOpen: boolean;
   setIsRandomPickerOpen: (open: boolean) => void;
 
@@ -93,8 +97,14 @@ interface MediaContextType {
   logDiaryEntry: (mediaId: string, entry: Omit<DiaryEntry, 'id'>) => void;
   openAddModalWithPreset: (preset?: Partial<MediaItem>) => void;
   resetToDemoData: () => void;
+  resetAllData: () => void;
   exportData: () => void;
   importData: (jsonStr: string) => boolean;
+  mergeImportData: (
+    incomingItems: MediaItem[],
+    incomingLists: string[],
+    overwriteConflicts: boolean
+  ) => { addedCount: number; updatedCount: number; listsAddedCount: number };
 
   // Quick stats
   allLanguages: string[];
@@ -120,8 +130,9 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [watchlistSubTab, setWatchlistSubTab] = useState<WatchlistSubTab>('watch_later');
+  const [librarySelectedList, setLibrarySelectedList] = useState<string>('watched');
 
-  // Custom Lists
+  // Custom Lists: Start empty on first launch
   const [customLists, setCustomLists] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_CUSTOM_LISTS);
@@ -130,7 +141,7 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (Array.isArray(parsed)) return parsed;
       }
     } catch (_) {}
-    return ['Weekend Marathon'];
+    return [];
   });
 
   useEffect(() => {
@@ -186,6 +197,7 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   const [viewingItem, setViewingItem] = useState<MediaItem | null>(null);
   const [isTMDBModalOpen, setIsTMDBModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isRandomPickerOpen, setIsRandomPickerOpen] = useState(false);
 
   // Filters
@@ -273,7 +285,7 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setItems((prev) => {
       const exists = prev.some((i) => i.id === updated.id);
       if (!exists) {
-        return [normalized, ...prev];
+        return prev;
       }
       return prev.map((item) => (item.id === updated.id ? normalized : item));
     });
@@ -516,15 +528,34 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const resetToDemoData = () => {
+    resetAllData();
+  };
+
+  const resetAllData = () => {
     setItems([]);
-    localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify([]));
+    setCustomLists([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY_ITEMS);
+      localStorage.removeItem(STORAGE_KEY_CUSTOM_LISTS);
+    } catch (_) {}
+    setViewingItem(null);
+    setEditingItem(null);
   };
 
   const exportData = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(items, null, 2));
+    const payload = {
+      appName: 'KINO',
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      itemCount: items.length,
+      customListCount: customLists.length,
+      items,
+      customLists,
+    };
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(payload, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `kino_tracker_backup_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchor.setAttribute('download', `kino_backup_${new Date().toISOString().split('T')[0]}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -534,13 +565,90 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const parsed = JSON.parse(jsonStr);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        setItems(parsed.map(normalizeItem));
+        mergeImportData(parsed, [], true);
+        return true;
+      } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.items)) {
+        mergeImportData(parsed.items, Array.isArray(parsed.customLists) ? parsed.customLists : [], true);
         return true;
       }
     } catch (e) {
       console.error('Invalid JSON import:', e);
     }
     return false;
+  };
+
+  const mergeImportData = (
+    incomingItems: MediaItem[],
+    incomingLists: string[],
+    overwriteConflicts: boolean
+  ): { addedCount: number; updatedCount: number; listsAddedCount: number } => {
+    let listsAddedCount = 0;
+    const existingListSet = new Set(customLists);
+    const combinedLists = [...customLists];
+
+    // Merge custom lists
+    for (const list of incomingLists) {
+      const trimmed = list.trim();
+      if (trimmed && !existingListSet.has(trimmed)) {
+        existingListSet.add(trimmed);
+        combinedLists.push(trimmed);
+        listsAddedCount++;
+      }
+    }
+    if (listsAddedCount > 0) {
+      setCustomLists(combinedLists);
+    }
+
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    setItems((currentItems) => {
+      const updatedList = [...currentItems];
+
+      for (const rawItem of incomingItems) {
+        const item = normalizeItem(rawItem);
+        // Also capture any customLists tagged on the item itself
+        if (item.customLists && item.customLists.length > 0) {
+          for (const listName of item.customLists) {
+            const trimmed = listName.trim();
+            if (trimmed && !existingListSet.has(trimmed)) {
+              existingListSet.add(trimmed);
+              combinedLists.push(trimmed);
+              listsAddedCount++;
+            }
+          }
+        }
+
+        const existingIndex = updatedList.findIndex(
+          (curr) =>
+            curr.id === item.id ||
+            (curr.title.trim().toLowerCase() === item.title.trim().toLowerCase() &&
+              curr.releaseYear === item.releaseYear &&
+              curr.category === item.category)
+        );
+
+        if (existingIndex >= 0) {
+          if (overwriteConflicts) {
+            updatedList[existingIndex] = {
+              ...item,
+              id: updatedList[existingIndex].id, // keep stable ID
+            };
+            updatedCount++;
+          }
+        } else {
+          updatedList.unshift(item);
+          addedCount++;
+        }
+      }
+
+      if (listsAddedCount > 0) {
+        setCustomLists([...combinedLists]);
+      }
+
+      return updatedList;
+    });
+
+    return { addedCount, updatedCount, listsAddedCount };
   };
 
   return (
@@ -555,6 +663,8 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setActiveTab,
         watchlistSubTab,
         setWatchlistSubTab,
+        librarySelectedList,
+        setLibrarySelectedList,
         isSearchModalOpen,
         setIsSearchModalOpen,
         isAddModalOpen,
@@ -565,6 +675,8 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setViewingItem,
         isTMDBModalOpen,
         setIsTMDBModalOpen,
+        isSettingsModalOpen,
+        setIsSettingsModalOpen,
         isRandomPickerOpen,
         setIsRandomPickerOpen,
         categoryFilter,
@@ -583,8 +695,10 @@ export const MediaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         logDiaryEntry,
         openAddModalWithPreset,
         resetToDemoData,
+        resetAllData,
         exportData,
         importData,
+        mergeImportData,
         allLanguages,
       }}
     >

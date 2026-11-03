@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { X, Database, Check, AlertCircle, Key, Download, Upload, RefreshCw } from 'lucide-react';
 import { useMedia } from '../context/MediaContext.tsx';
-import { tmdbService } from '../services/tmdbService.ts';
+import { tmdbService } from '../services/tmdb.ts';
 
 export const TMDBKeyModal: React.FC = () => {
   const { isTMDBModalOpen, setIsTMDBModalOpen, exportData, importData, resetToDemoData } = useMedia();

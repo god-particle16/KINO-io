@@ -14,6 +14,7 @@ import { SearchModal } from './components/SearchModal.tsx';
 import { AddEditModal } from './components/AddEditModal.tsx';
 import { ItemDetailsModal } from './components/ItemDetailsModal.tsx';
 import { TMDBKeyModal } from './components/TMDBKeyModal.tsx';
+import { SettingsModal } from './components/SettingsModal.tsx';
 import { RandomPickerModal } from './components/RandomPickerModal.tsx';
 import { KinoLogo } from './components/KinoLogo.tsx';
 
@@ -54,6 +55,7 @@ const AppContent: React.FC = () => {
       <SearchModal />
       <AddEditModal />
       <ItemDetailsModal />
+      <SettingsModal />
       <TMDBKeyModal />
       <RandomPickerModal />
     </div>

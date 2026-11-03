@@ -29,135 +29,31 @@ import {
   CheckCircle2,
   FolderPlus,
   ListPlus,
+  User,
 } from 'lucide-react';
 import { useMedia } from '../context/MediaContext.tsx';
 import { RatingStars } from './RatingStars.tsx';
 import { WatchStatus, MediaItem } from '../types/media.ts';
 import { tmdbService } from '../services/tmdb.ts';
 
-// Preset generator for titles without explicit cast/director/streaming info
-const getEnrichedMediaData = (item: MediaItem) => {
-  const titleLower = item.title.toLowerCase();
-  const isZootopia = titleLower.includes('zootopia');
-  const isAvengers = titleLower.includes('avenger') || titleLower.includes('endgame');
-  const isAnime = item.category === 'anime';
-
-  // 1. Cast
-  let cast = item.cast;
-  if (!cast || cast.length === 0) {
-    if (isZootopia) {
-      cast = [
-        {
-          name: 'Ginnifer Goodwin',
-          role: 'Judy Hopps (voice)',
-          avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-        },
-        {
-          name: 'Jason Bateman',
-          role: 'Nick Wilde (voice)',
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-        },
-        {
-          name: 'Ke Huy Quan',
-          role: 'Gary Snake (voice)',
-          avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-        },
-        {
-          name: 'Idris Elba',
-          role: 'Chief Bogo (voice)',
-          avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200',
-        },
-      ];
-    } else if (isAvengers) {
-      cast = [
-        {
-          name: 'Robert Downey Jr.',
-          role: 'Tony Stark / Iron Man',
-          avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-        },
-        {
-          name: 'Chris Evans',
-          role: 'Steve Rogers / Captain America',
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-        },
-        {
-          name: 'Scarlett Johansson',
-          role: 'Natasha Romanoff / Black Widow',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-        },
-      ];
-    } else if (isAnime) {
-      cast = [
-        {
-          name: 'Natsuki Hanae',
-          role: 'Tanjiro Kamado (Japanese Voice)',
-          avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
-        },
-        {
-          name: 'Akari Kito',
-          role: 'Nezuko Kamado (Japanese Voice)',
-          avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
-        },
-        {
-          name: 'Hiro Shimono',
-          role: 'Zenitsu Agatsuma (Japanese Voice)',
-          avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200',
-        },
-      ];
-    } else {
-      cast = [
-        {
-          name: 'Lead Actor',
-          role: 'Protagonist',
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-        },
-        {
-          name: 'Co-Star',
-          role: 'Supporting Role',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-        },
-        {
-          name: 'Feature Voice',
-          role: 'Key Guest',
-          avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-        },
-      ];
-    }
-  }
-
-  // 2. Directors
-  const directors =
-    item.directors ||
-    (isZootopia
-      ? ['Jared Bush', 'Byron Howard']
-      : item.category === 'movie'
-      ? ['Christopher Nolan', 'Denis Villeneuve']
-      : ['Makoto Shinkai', 'Hayao Miyazaki']);
-
-  // 3. Available On Streaming Services
-  const availableOn = item.availableOn || ['NETFLIX', 'prime video', 'Apple TV'];
-
-  // 4. IMDb Rating / Runtime / Content Rating
-  const imdbScore = item.imdbScore || (item.rating > 0 ? (item.rating * 1.8 + 0.8).toFixed(1) : '8.6');
-  const runtime = item.runtime || (item.category === 'movie' ? '1h 48m' : '24m per ep');
-  const contentRating = item.contentRating || '14+';
-
-  // 5. Reliable Fallback Image URL
-  const fallbackImage = isZootopia
-    ? 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1200&q=80'
-    : item.category === 'movie'
-    ? 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=1200&q=80'
-    : item.category === 'tv'
-    ? 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80'
-    : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=1200&q=80';
-
-  return { cast, directors, availableOn, imdbScore, runtime, contentRating, fallbackImage };
+// Helper to extract strictly real data without placeholders or fake fallbacks
+const getMediaDetails = (item: MediaItem) => {
+  return {
+    cast: item.cast && item.cast.length > 0 ? item.cast : [],
+    directors: item.directors && item.directors.length > 0 ? item.directors : [],
+    availableOn: item.availableOn && item.availableOn.length > 0 ? item.availableOn : [],
+    imdbScore: item.imdbScore ? String(item.imdbScore) : undefined,
+    runtime: item.runtime ? String(item.runtime) : undefined,
+    contentRating: item.contentRating ? String(item.contentRating) : undefined,
+  };
 };
 
 export const ItemDetailsModal: React.FC = () => {
   const {
-    viewingItem,
+    viewingItem: rawViewingItem,
     setViewingItem,
+    items,
+    addItem,
     setEditingItem,
     setIsAddModalOpen,
     deleteItem,
@@ -170,6 +66,15 @@ export const ItemDetailsModal: React.FC = () => {
     addCustomList,
     toggleItemInCustomList,
   } = useMedia();
+
+  // Local modal state so opening a TMDB item does NOT add it to the library
+  const [modalItem, setModalItem] = useState<MediaItem | null>(rawViewingItem);
+
+  useEffect(() => {
+    setModalItem(rawViewingItem);
+  }, [rawViewingItem]);
+
+  const viewingItem = modalItem || rawViewingItem;
 
   const [activeTab, setActiveTab] = useState<'cast' | 'media' | 'reviews'>('cast');
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(false);
@@ -191,12 +96,18 @@ export const ItemDetailsModal: React.FC = () => {
   const [rewatchNote, setRewatchNote] = useState('');
   const [rewatchSeason, setRewatchSeason] = useState(1);
 
-  const enriched = viewingItem ? getEnrichedMediaData(viewingItem) : null;
+  const details = viewingItem ? getMediaDetails(viewingItem) : null;
+
+  useEffect(() => {
+    if (details && details.cast.length === 0 && activeTab === 'cast') {
+      setActiveTab('media');
+    }
+  }, [details?.cast.length]);
 
   useEffect(() => {
     let isCancelled = false;
-    if (viewingItem && enriched) {
-      const initialSrc = viewingItem.backdropUrl || viewingItem.posterUrl || enriched.fallbackImage;
+    if (viewingItem) {
+      const initialSrc = viewingItem.backdropUrl || viewingItem.posterUrl || '';
       setHeroImageSrc(initialSrc);
 
       if ((viewingItem.tmdbId || viewingItem.id.startsWith('tmdb:')) && (!viewingItem.cast || viewingItem.cast.length === 0)) {
@@ -204,17 +115,28 @@ export const ItemDetailsModal: React.FC = () => {
         const rawId = viewingItem.tmdbId || viewingItem.id.replace(/^tmdb:(movie|tv):/, '');
         tmdbService
           .getDetails(tmdbType, rawId)
-          .then((details) => {
-            if (!isCancelled && details) {
-              if (details.backdropUrl) setHeroImageSrc(details.backdropUrl);
-              updateItem({
+          .then((tmdbRes) => {
+            if (!isCancelled && tmdbRes) {
+              if (tmdbRes.backdropUrl) setHeroImageSrc(tmdbRes.backdropUrl);
+              const enrichedItem: MediaItem = {
                 ...viewingItem,
-                cast: details.cast || viewingItem.cast,
-                directors: details.directors || viewingItem.directors,
-                trailerUrl: details.trailerUrl || viewingItem.trailerUrl,
-                overview: details.overview || viewingItem.overview,
-                genres: details.genres || viewingItem.genres,
-              });
+                cast: tmdbRes.cast || viewingItem.cast,
+                directors: tmdbRes.directors || viewingItem.directors,
+                trailerUrl: tmdbRes.trailerUrl || viewingItem.trailerUrl,
+                overview: tmdbRes.overview || viewingItem.overview,
+                genres: tmdbRes.genres || viewingItem.genres,
+                backdropUrl: tmdbRes.backdropUrl || viewingItem.backdropUrl,
+                runtime: tmdbRes.runtime || viewingItem.runtime,
+                imdbScore: tmdbRes.imdbScore || viewingItem.imdbScore,
+              };
+              // Update local modal state only
+              setModalItem(enrichedItem);
+
+              // Update library ONLY if this title already exists in the library
+              const isSavedInLibrary = items.some((i) => i.id === viewingItem.id);
+              if (isSavedInLibrary) {
+                updateItem(enrichedItem);
+              }
             }
           })
           .catch((err) => {
@@ -233,24 +155,41 @@ export const ItemDetailsModal: React.FC = () => {
     };
   }, [viewingItem?.id]);
 
-  if (!viewingItem || !enriched) return null;
+  if (!viewingItem || !details) return null;
+
+  const isSavedInLibrary = items.some((i) => i.id === viewingItem.id);
 
   const handleToggleWatched = () => {
     const isCurrentlyWatched = viewingItem.status === 'watched';
-    if (isCurrentlyWatched) {
-      updateItem({
-        ...viewingItem,
-        status: 'watch_later',
-        inWatchlist: false,
-      });
-    } else {
-      const today = new Date().toISOString().split('T')[0];
-      updateItem({
+    const today = new Date().toISOString().split('T')[0];
+
+    if (!isSavedInLibrary) {
+      // Add to library upon pressing Watched
+      const newItem: MediaItem = {
         ...viewingItem,
         status: 'watched',
         inWatchlist: false,
         dateWatched: today,
-      });
+      };
+      setModalItem(newItem);
+      addItem(newItem);
+    } else if (isCurrentlyWatched) {
+      const updated: MediaItem = {
+        ...viewingItem,
+        status: 'watch_later',
+        inWatchlist: false,
+      };
+      setModalItem(updated);
+      updateItem(updated);
+    } else {
+      const updated: MediaItem = {
+        ...viewingItem,
+        status: 'watched',
+        inWatchlist: false,
+        dateWatched: today,
+      };
+      setModalItem(updated);
+      updateItem(updated);
       logDiaryEntry(viewingItem.id, {
         watchedDate: today,
         rating: viewingItem.rating || 4,
@@ -259,11 +198,61 @@ export const ItemDetailsModal: React.FC = () => {
     }
   };
 
+  const handleToggleFavorite = () => {
+    if (!isSavedInLibrary) {
+      // Add to library upon pressing Favorite
+      const newItem: MediaItem = {
+        ...viewingItem,
+        isFavorite: true,
+      };
+      setModalItem(newItem);
+      addItem(newItem);
+    } else {
+      toggleFavorite(viewingItem.id);
+      setModalItem((prev) => (prev ? { ...prev, isFavorite: !prev.isFavorite } : prev));
+    }
+  };
+
+  const handleToggleWatchlist = () => {
+    if (!isSavedInLibrary) {
+      // Add to library upon pressing Watch List
+      const newItem: MediaItem = {
+        ...viewingItem,
+        inWatchlist: true,
+        status: 'watch_later',
+      };
+      setModalItem(newItem);
+      addItem(newItem);
+    } else {
+      toggleWatchlist(viewingItem.id);
+      setModalItem((prev) => (prev ? { ...prev, inWatchlist: !prev.inWatchlist } : prev));
+    }
+  };
+
+  const handleLogButtonClick = () => {
+    if (!isSavedInLibrary) {
+      // Add to library upon pressing Log
+      const newItem: MediaItem = {
+        ...viewingItem,
+        status: 'watched',
+      };
+      setModalItem(newItem);
+      addItem(newItem);
+    }
+    setShowLogPicker(!showLogPicker);
+    setShowCustomListPicker(false);
+    setShowRatePicker(false);
+  };
+
   const handleRatingChange = (newRating: number) => {
-    updateItem({
+    const updated: MediaItem = {
       ...viewingItem,
       rating: newRating,
-    });
+    };
+    setModalItem(updated);
+    if (isSavedInLibrary) {
+      updateItem(updated);
+    }
     setShowRatePicker(false);
   };
 
@@ -284,6 +273,16 @@ export const ItemDetailsModal: React.FC = () => {
 
   const handleAddDiaryEntry = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSavedInLibrary) {
+      const newItem: MediaItem = {
+        ...viewingItem,
+        status: 'watched',
+        rating: rewatchRating,
+        dateWatched: rewatchDate,
+      };
+      setModalItem(newItem);
+      addItem(newItem);
+    }
     logDiaryEntry(viewingItem.id, {
       watchedDate: rewatchDate,
       rating: rewatchRating,
@@ -389,23 +388,30 @@ export const ItemDetailsModal: React.FC = () => {
         {/* ====================================================================== */}
         {/* HERO BACKDROP BANNER LAYER (Crisp image 1 on load, blurs on scroll for image 2) */}
         {/* ====================================================================== */}
+        {/* HERO BACKDROP BANNER LAYER */}
+        {/* ====================================================================== */}
         <div className="absolute top-0 inset-x-0 h-[420px] sm:h-[460px] pointer-events-none overflow-hidden z-0 select-none">
-          {/* Main Hero Backdrop Image with Dynamic Scroll Blur */}
-          <img
-            src={heroImageSrc || enriched.fallbackImage}
-            alt={viewingItem.title}
-            className="w-full h-full object-cover object-top brightness-95 transform-gpu transition-all duration-150"
-            style={{
-              filter: `blur(${Math.min(28, (scrollTop / 100) * 28)}px)`,
-              opacity: Math.max(0.2, 1 - scrollTop / 280),
-              transform: `scale(${1 + Math.min(0.2, scrollTop / 600)})`,
-            }}
-            onError={() => {
-              if (heroImageSrc !== enriched.fallbackImage) {
-                setHeroImageSrc(enriched.fallbackImage);
-              }
-            }}
-          />
+          {heroImageSrc ? (
+            <img
+              src={heroImageSrc}
+              alt={viewingItem.title}
+              className="w-full h-full object-cover object-top brightness-95 transform-gpu transition-all duration-150"
+              style={{
+                filter: `blur(${Math.min(28, (scrollTop / 100) * 28)}px)`,
+                opacity: Math.max(0.2, 1 - scrollTop / 280),
+                transform: `scale(${1 + Math.min(0.2, scrollTop / 600)})`,
+              }}
+              onError={() => {
+                if (viewingItem.posterUrl && heroImageSrc !== viewingItem.posterUrl) {
+                  setHeroImageSrc(viewingItem.posterUrl);
+                } else {
+                  setHeroImageSrc('');
+                }
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-b from-[#121629] via-[#0b0e1b] to-[#07080d]" />
+          )}
 
           {/* Smooth GradientScrim blending poster image into app dark background */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#07080d] via-[#07080d]/40 to-black/60 pointer-events-none" />
@@ -415,67 +421,88 @@ export const ItemDetailsModal: React.FC = () => {
         {/* MAIN SCROLLABLE CONTENT AREA (Title, Meta, Available On, Trailer, 2x2 Buttons) */}
         {/* ====================================================================== */}
         <div className="relative z-10 flex-1 px-4 sm:px-6 pb-6 space-y-4 pt-16 sm:pt-20 -mt-16">
-          {/* HERO TITLE & META HEADER BLOCK (Image 1 placement, scrolls UP into top row for Image 4) */}
+          {/* HERO TITLE & META HEADER BLOCK */}
           <div className="space-y-2 pt-16 sm:pt-20">
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white drop-shadow-xl leading-tight">
-              {viewingItem.title} ({viewingItem.releaseYear})
+              {viewingItem.title} {viewingItem.releaseYear ? `(${viewingItem.releaseYear})` : ''}
             </h1>
 
-            {/* IMDb Rating & Meta Bar */}
-            <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-300 font-medium drop-shadow-md">
-              {/* IMDb Yellow Badge */}
-              <div className="flex items-center gap-1.5 bg-[#f5c518] text-black px-2 py-0.5 rounded font-extrabold text-[11px] tracking-wide shadow-sm">
-                <span>IMDb</span>
-                <span className="font-bold">{enriched.imdbScore} / 10</span>
+            {/* IMDb Rating & Meta Bar - only show real data */}
+            {(details.imdbScore || details.runtime || details.contentRating || viewingItem.releaseYear) && (
+              <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-300 font-medium drop-shadow-md">
+                {/* Real IMDb Badge if present */}
+                {details.imdbScore && (
+                  <div className="flex items-center gap-1.5 bg-[#f5c518] text-black px-2 py-0.5 rounded font-extrabold text-[11px] tracking-wide shadow-sm">
+                    <span>IMDb</span>
+                    <span className="font-bold">{details.imdbScore} / 10</span>
+                  </div>
+                )}
+
+                {/* Real Runtime if present */}
+                {details.runtime && (
+                  <>
+                    {details.imdbScore && <span>•</span>}
+                    <span className="flex items-center gap-1 font-mono tabular-nums">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      {details.runtime}
+                    </span>
+                  </>
+                )}
+
+                {/* Real Content Rating if present */}
+                {details.contentRating && (
+                  <>
+                    {(details.imdbScore || details.runtime) && <span>•</span>}
+                    <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[11px] font-semibold border border-white/20">
+                      {details.contentRating}
+                    </span>
+                  </>
+                )}
+
+                {/* Real Release Year if present */}
+                {viewingItem.releaseYear ? (
+                  <>
+                    {(details.imdbScore || details.runtime || details.contentRating) && <span>•</span>}
+                    <span className="font-mono tabular-nums">{viewingItem.releaseYear}</span>
+                  </>
+                ) : null}
               </div>
+            )}
 
-              <span>•</span>
-              <span className="flex items-center gap-1 font-mono tabular-nums">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                {enriched.runtime}
-              </span>
+            {/* Classification & Genres Line - only show real data */}
+            {(details.contentRating || (viewingItem.genres && viewingItem.genres.length > 0)) && (
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-300">
+                {details.contentRating && (
+                  <span className="px-2 py-0.5 rounded-md border border-white/30 text-[11px] font-bold text-slate-200 bg-black/30 backdrop-blur-sm">
+                    {details.contentRating}
+                  </span>
+                )}
 
-              <span>•</span>
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[11px] font-semibold border border-white/20">
-                {enriched.contentRating}
-              </span>
-
-              <span>•</span>
-              <span className="font-mono tabular-nums">{viewingItem.releaseYear}</span>
-            </div>
-
-            {/* Classification & Genres Line */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-300">
-              <span className="px-2 py-0.5 rounded-md border border-white/30 text-[11px] font-bold text-slate-200 bg-black/30 backdrop-blur-sm">
-                {enriched.contentRating}
-              </span>
-
-              <span className="text-slate-200 font-medium">
-                {viewingItem.genres && viewingItem.genres.length > 0
-                  ? viewingItem.genres.join(' • ')
-                  : 'Animations • Comedy • Adventure • Mystery'}
-              </span>
-            </div>
+                {viewingItem.genres && viewingItem.genres.length > 0 && (
+                  <span className="text-slate-200 font-medium">
+                    {viewingItem.genres.join(' • ')}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Available On Streaming Providers Badges */}
-          <div className="flex items-center gap-2 flex-wrap pt-1">
-            <span className="text-xs font-semibold text-slate-400">Available on:</span>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-[#e50914]/20 border border-[#e50914]/40 text-[#ff4f5a] font-extrabold text-xs tracking-wider uppercase shadow-sm">
-                NETFLIX
-              </span>
-              <span className="px-3 py-1 rounded-full bg-[#00a8e1]/20 border border-[#00a8e1]/40 text-[#38cdff] font-extrabold text-xs tracking-wider lowercase italic shadow-sm">
-                prime video
-              </span>
-              <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white font-bold text-xs tracking-tight shadow-sm">
-                 tv
-              </span>
-              <span className="px-3 py-1 rounded-full bg-[#113ccf]/20 border border-[#113ccf]/40 text-[#678eff] font-bold text-xs tracking-wide shadow-sm">
-                Disney+
-              </span>
+          {/* Available On Streaming Providers Badges - only render if real data exists */}
+          {details.availableOn && details.availableOn.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <span className="text-xs font-semibold text-slate-400">Available on:</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {details.availableOn.map((provider) => (
+                  <span
+                    key={provider}
+                    className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white font-bold text-xs tracking-tight shadow-sm"
+                  >
+                    {provider}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ====================================================================== */}
           {/* PROMINENT RED TRAILER BUTTON & SECONDARY ACTION BUTTONS */}
@@ -497,7 +524,7 @@ export const ItemDetailsModal: React.FC = () => {
               {/* 1. Watchlist Button */}
               <button
                 type="button"
-                onClick={() => toggleWatchlist(viewingItem.id)}
+                onClick={handleToggleWatchlist}
                 className={`py-3 px-2 sm:px-3 rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
                   viewingItem.inWatchlist
                     ? 'bg-indigo-600/35 text-indigo-200 border-indigo-500/50 shadow-md'
@@ -525,11 +552,7 @@ export const ItemDetailsModal: React.FC = () => {
               {/* 3. Log Button */}
               <button
                 type="button"
-                onClick={() => {
-                  setShowLogPicker(!showLogPicker);
-                  setShowCustomListPicker(false);
-                  setShowRatePicker(false);
-                }}
+                onClick={handleLogButtonClick}
                 className={`py-3 px-2 sm:px-3 rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
                   showLogPicker
                     ? 'bg-violet-600/35 text-violet-200 border-violet-500/60 shadow-md'
@@ -565,7 +588,7 @@ export const ItemDetailsModal: React.FC = () => {
               {/* 5. Favorite Heart Button */}
               <button
                 type="button"
-                onClick={() => toggleFavorite(viewingItem.id)}
+                onClick={handleToggleFavorite}
                 className={`py-3 px-2 sm:px-3 rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
                   viewingItem.isFavorite
                     ? 'bg-rose-500/30 text-rose-300 border-rose-500/50 shadow-md'
@@ -689,7 +712,7 @@ export const ItemDetailsModal: React.FC = () => {
                 <div className="space-y-2">
                   <button
                     type="button"
-                    onClick={() => toggleFavorite(viewingItem.id)}
+                    onClick={handleToggleFavorite}
                     className={`w-full px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer border ${
                       viewingItem.isFavorite
                         ? 'bg-rose-500/25 border-rose-500/50 text-rose-300'
@@ -791,37 +814,48 @@ export const ItemDetailsModal: React.FC = () => {
           </div>
 
           {/* ====================================================================== */}
-          {/* SYNOPSIS OVERVIEW WITH "READ MORE" */}
+          {/* SYNOPSIS OVERVIEW WITH "READ MORE" & DIRECTORS */}
           {/* ====================================================================== */}
-          <div className="space-y-2">
-            <p
-              className={`text-xs sm:text-sm text-slate-300 leading-relaxed font-normal transition-all ${
-                isOverviewExpanded ? '' : 'line-clamp-3'
-              }`}
-            >
-              {viewingItem.overview ||
-                `After successfully solving the biggest case in Zootopia's history, two rookie police officers Judy Hopps and Nick Wilde realize that their partnership is tested by a new mysterious case in the animal metropolis...`}
-            </p>
+          {(viewingItem.overview?.trim() || details.directors.length > 0) && (
+            <div className="space-y-2">
+              {viewingItem.overview?.trim() && (
+                <>
+                  <p
+                    className={`text-xs sm:text-sm text-slate-300 leading-relaxed font-normal transition-all ${
+                      isOverviewExpanded ? '' : 'line-clamp-3'
+                    }`}
+                  >
+                    {viewingItem.overview.trim()}
+                  </p>
 
-            <button
-              type="button"
-              onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
-              className="text-xs font-bold text-white hover:text-indigo-400 flex items-center gap-1 cursor-pointer"
-            >
-              <span>{isOverviewExpanded ? 'Show Less' : 'Read More'}</span>
-              {isOverviewExpanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
+                  {viewingItem.overview.trim().length > 180 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
+                      className="text-xs font-bold text-white hover:text-indigo-400 flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>{isOverviewExpanded ? 'Show Less' : 'Read More'}</span>
+                      {isOverviewExpanded ? (
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+                </>
               )}
-            </button>
 
-            {/* Directors Line */}
-            <div className="pt-2 text-xs text-slate-400">
-              <span className="font-semibold text-slate-300">Director: </span>
-              <span>{enriched.directors.join(', ')}</span>
+              {/* Directors Line - only show if real directors exist */}
+              {details.directors.length > 0 && (
+                <div className="pt-2 text-xs text-slate-400">
+                  <span className="font-semibold text-slate-300">
+                    {details.directors.length > 1 ? 'Directors: ' : 'Director: '}
+                  </span>
+                  <span>{details.directors.join(', ')}</span>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
           {/* Season progress tracking bar for TV / Anime */}
           {(viewingItem.category === 'tv' || viewingItem.category === 'anime') && (
@@ -861,17 +895,19 @@ export const ItemDetailsModal: React.FC = () => {
           {/* ====================================================================== */}
           <div className="space-y-4 pt-2">
             <div className="flex items-center border-b border-white/[0.1] gap-6 text-sm font-semibold">
-              <button
-                type="button"
-                onClick={() => setActiveTab('cast')}
-                className={`pb-3 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'cast'
-                    ? 'border-red-500 text-white'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Top Cast & Crew
-              </button>
+              {details.cast.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('cast')}
+                  className={`pb-3 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    activeTab === 'cast'
+                      ? 'border-red-500 text-white'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Top Cast & Crew
+                </button>
+              )}
 
               <button
                 type="button"
@@ -898,25 +934,36 @@ export const ItemDetailsModal: React.FC = () => {
               </button>
             </div>
 
-            {/* TAB CONTENT 1: TOP CAST & CREW */}
-            {activeTab === 'cast' && (
+            {/* TAB CONTENT 1: TOP CAST & CREW - only render if real cast exists */}
+            {activeTab === 'cast' && details.cast.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {enriched.cast.map((actor, idx) => (
+                {details.cast.map((actor, idx) => (
                   <div
                     key={idx}
                     className="flex flex-col items-center text-center p-3.5 rounded-2xl bg-[#0c0f1a] border border-white/[0.06] hover:border-white/20 transition-all"
                   >
-                    <img
-                      src={actor.avatarUrl}
-                      alt={actor.name}
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-white/10 shadow-md mb-2.5"
-                    />
+                    {actor.avatarUrl ? (
+                      <img
+                        src={actor.avatarUrl}
+                        alt={actor.name}
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-white/10 shadow-md mb-2.5"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 border-2 border-white/10 shadow-md mb-2.5 flex items-center justify-center text-slate-400">
+                        <User className="w-7 h-7" />
+                      </div>
+                    )}
                     <div className="text-xs sm:text-sm font-bold text-white line-clamp-1">
                       {actor.name}
                     </div>
-                    <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
-                      {actor.role}
-                    </div>
+                    {actor.role && (
+                      <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                        {actor.role}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -929,11 +976,17 @@ export const ItemDetailsModal: React.FC = () => {
                   className="aspect-video w-full bg-black rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer"
                   onClick={() => setShowTrailerModal(true)}
                 >
-                  <img
-                    src={heroImageSrc || enriched.fallbackImage}
-                    alt="Media Backstage Still"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
+                  {heroImageSrc || viewingItem.posterUrl ? (
+                    <img
+                      src={heroImageSrc || viewingItem.posterUrl}
+                      alt="Media Backstage Still"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-slate-900 to-black flex items-center justify-center text-xs text-slate-500">
+                      No media preview available
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <div className="p-4 rounded-full bg-red-600 text-white shadow-xl group-hover:scale-110 transition-transform">
                       <Play className="w-8 h-8 fill-white" />

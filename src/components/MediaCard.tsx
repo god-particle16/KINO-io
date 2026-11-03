@@ -8,6 +8,7 @@ import { Heart, Bookmark, Plus, Film, Tv, Sparkles } from 'lucide-react';
 import { MediaItem } from '../types/media.ts';
 import { RatingStars } from './RatingStars.tsx';
 import { useMedia } from '../context/MediaContext.tsx';
+import { PosterImage } from './PosterImage.tsx';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -76,64 +77,52 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item }) => {
         onClick={handleCardClick}
         className="relative aspect-[2/3] w-full bg-[#12151f] overflow-hidden cursor-pointer"
       >
-        {item.posterUrl ? (
-          <img
-            src={item.posterUrl}
-            alt={item.title}
-            referrerPolicy="no-referrer"
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={(e) => {
-              (e.target as HTMLElement).style.display = 'none';
-            }}
-          />
-        ) : null}
+        <PosterImage
+          url={item.posterUrl}
+          title={item.title}
+          category={item.category}
+          releaseYear={item.releaseYear}
+          size="md"
+          className="w-full h-full"
+          imgClassName="transition-transform duration-300 group-hover:scale-105"
+        />
 
-        {/* Fallback container with typography */}
-        <div className="absolute inset-0 -z-10 flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-[#141824] to-[#0d1019]">
-          <div className="w-10 h-10 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-2 text-slate-400">
-            {getCategoryIcon()}
-          </div>
-          <span className="text-xs font-semibold text-slate-300 line-clamp-2 leading-snug">
-            {item.title}
-          </span>
-          <span className="text-[11px] text-slate-500 mt-1 font-mono tabular-nums">
-            {item.releaseYear}
-          </span>
-        </div>
-
-        {/* Subtle scrim on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2.5">
+        {/* Subtle scrim on hover & touch-visible action bar */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 pointer-events-none">
           {/* Top action icons */}
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full pointer-events-none">
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 toggleFavorite(item.id);
               }}
-              className={`p-1.5 rounded-md backdrop-blur-md transition-colors cursor-pointer ${
+              className={`w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg backdrop-blur-md transition-colors cursor-pointer pointer-events-auto active:scale-95 ${
                 item.isFavorite
                   ? 'bg-rose-500/25 text-rose-400 hover:bg-rose-500/35'
-                  : 'bg-black/50 text-slate-300 hover:text-white hover:bg-black/70'
+                  : 'bg-black/60 text-slate-300 hover:text-white hover:bg-black/80'
               }`}
               title={item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              aria-label={item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             >
-              <Heart className={`w-3.5 h-3.5 ${item.isFavorite ? 'fill-rose-400' : ''}`} />
+              <Heart className={`w-4 h-4 ${item.isFavorite ? 'fill-rose-400' : ''}`} />
             </button>
 
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 toggleWatchlist(item.id);
               }}
-              className={`p-1.5 rounded-md backdrop-blur-md transition-colors cursor-pointer ${
+              className={`w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg backdrop-blur-md transition-colors cursor-pointer pointer-events-auto active:scale-95 ${
                 item.inWatchlist
                   ? 'bg-indigo-600/40 text-indigo-300 hover:bg-indigo-600/50'
-                  : 'bg-black/50 text-slate-300 hover:text-white hover:bg-black/70'
+                  : 'bg-black/60 text-slate-300 hover:text-white hover:bg-black/80'
               }`}
               title={item.inWatchlist ? 'In Watch List' : 'Add to Watch List'}
+              aria-label={item.inWatchlist ? 'In Watch List' : 'Add to Watch List'}
             >
-              <Bookmark className={`w-3.5 h-3.5 ${item.inWatchlist ? 'fill-indigo-400' : ''}`} />
+              <Bookmark className={`w-4 h-4 ${item.inWatchlist ? 'fill-indigo-400' : ''}`} />
             </button>
           </div>
         </div>

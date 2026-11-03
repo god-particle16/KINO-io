@@ -188,9 +188,7 @@ export const mapTMDBToMediaItem = (item: any, forceType?: 'movie' | 'tv'): Media
     ? mediaType === 'movie'
       ? `${Math.floor(runtimeNum / 60)}h ${runtimeNum % 60}m`
       : `${runtimeNum}m per ep`
-    : mediaType === 'movie'
-    ? '2h 00m'
-    : '24m per ep';
+    : undefined;
 
   const voteAvg = item.vote_average ? item.vote_average.toFixed(1) : undefined;
 
@@ -245,14 +243,14 @@ export const mapTMDBToMediaItem = (item: any, forceType?: 'movie' | 'tv'): Media
     inWatchlist: false,
     posterUrl,
     backdropUrl,
-    overview: item.overview || 'No overview available for this title.',
+    overview: item.overview && item.overview.trim() ? item.overview.trim() : undefined,
     totalSeasons: item.number_of_seasons || (category === 'tv' ? 1 : undefined),
     animeTotalSeasons: item.number_of_seasons || (category === 'anime' ? 1 : undefined),
     currentSeason: category === 'tv' ? 1 : undefined,
     animeCurrentSeason: category === 'anime' ? 1 : undefined,
     runtime,
-    imdbScore: voteAvg || '7.5',
-    cast,
+    imdbScore: voteAvg || undefined,
+    cast: cast && cast.length > 0 ? cast : undefined,
     directors: directors && directors.length > 0 ? directors : undefined,
     trailerUrl,
   };
