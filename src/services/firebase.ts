@@ -29,7 +29,7 @@ import {
 const firebaseConfig = {
   apiKey:
     import.meta.env.VITE_FIREBASE_API_KEY ||
-    'AIzaSyD3seIh9n7JtNo4NuAYeQHCK_D8wWWkLOY',
+    'paster here api ',
   authDomain:
     import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
     'kino-io.firebaseapp.com',
