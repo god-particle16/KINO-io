@@ -48,22 +48,25 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item }) => {
         return 'Watching';
       case 'watch_later':
         return 'Watch List';
+      case 'none':
       default:
-        return item.status;
+        return '';
     }
   };
 
-  // Season progress calculations
+  // Season progress calculations (only for active watching)
   let progressPercent = 0;
   let seasonText = '';
-  if (item.category === 'tv' && item.totalSeasons) {
-    const curSeason = item.currentSeason || 0;
-    progressPercent = Math.min(100, Math.round((curSeason / item.totalSeasons) * 100));
-    seasonText = `Season ${curSeason} of ${item.totalSeasons}`;
-  } else if (item.category === 'anime' && item.animeTotalSeasons) {
-    const curSeason = item.animeCurrentSeason || 0;
-    progressPercent = Math.min(100, Math.round((curSeason / item.animeTotalSeasons) * 100));
-    seasonText = `Season ${curSeason} of ${item.animeTotalSeasons}`;
+  if (item.status === 'watching') {
+    if (item.category === 'tv' && item.totalSeasons) {
+      const curSeason = item.currentSeason || 0;
+      progressPercent = Math.min(100, Math.round((curSeason / item.totalSeasons) * 100));
+      seasonText = `Season ${curSeason} of ${item.totalSeasons}`;
+    } else if (item.category === 'anime' && item.animeTotalSeasons) {
+      const curSeason = item.animeCurrentSeason || 0;
+      progressPercent = Math.min(100, Math.round((curSeason / item.animeTotalSeasons) * 100));
+      seasonText = `Season ${curSeason} of ${item.animeTotalSeasons}`;
+    }
   }
 
   const handleCardClick = () => {
@@ -165,10 +168,12 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item }) => {
           <div className="flex items-center justify-between gap-1">
             {item.rating > 0 ? (
               <RatingStars rating={item.rating} size="xs" showNumeric />
-            ) : (
+            ) : item.status !== 'none' && getStatusLabel() ? (
               <span className="text-[11px] text-slate-500">
                 {getStatusLabel()}
               </span>
+            ) : (
+              <span />
             )}
 
             {seasonText && (

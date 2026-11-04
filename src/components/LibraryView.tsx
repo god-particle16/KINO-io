@@ -269,7 +269,7 @@ export const LibraryView: React.FC = () => {
       {/* 2. Individual Category Filter Bar (All, Movies, TV Series, Anime for the active list) */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
         {/* Category Pills in Indigo Violet with individual counts */}
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1 max-w-full">
           {[
             { id: 'all' as const, label: 'All', count: allCount },
             { id: 'movie' as const, label: 'Movies', count: moviesCount },
@@ -281,7 +281,7 @@ export const LibraryView: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => setCategoryFilter(cat.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
                   isActive
                     ? 'bg-indigo-600/25 text-indigo-300 border border-indigo-500/35 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'

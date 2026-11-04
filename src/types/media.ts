@@ -5,7 +5,7 @@
 
 export type MediaCategory = 'movie' | 'tv' | 'anime';
 
-export type WatchStatus = 'watch_later' | 'watching' | 'watched';
+export type WatchStatus = 'watch_later' | 'watching' | 'watched' | 'none';
 
 export interface DiaryEntry {
   id: string;
@@ -60,7 +60,13 @@ export interface MediaItem {
   availableOn?: string[];
   cast?: { name: string; role: string; avatarUrl?: string }[];
   trailerUrl?: string;
+
+  // Cloud Sync & Conflict Resolution
+  updatedAt?: string; // ISO 8601 string
+  deletedAt?: string; // Tombstone ISO 8601 string for cross-device deletion sync
 }
+
+export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'error';
 
 export interface TMDBMediaResult {
   id: number;

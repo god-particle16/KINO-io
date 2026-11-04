@@ -137,19 +137,10 @@ export const DashboardView: React.FC = () => {
     return list.slice(0, 10);
   }, [items]);
 
-  // 2. Gather Watch Next queued titles
+  // 2. Gather Watch Next queued titles (strictly Watch List items)
   const watchNextItems: MediaItem[] = useMemo(() => {
     const queued = items.filter((i) => i.inWatchlist || i.status === 'watch_later');
     const sorted = [...queued].sort((a, b) => a.releaseYear - b.releaseYear);
-
-    // If fewer than 6, supplement with unwatched titles
-    if (sorted.length < 6) {
-      const existingIds = new Set(sorted.map((i) => i.id));
-      const extra = items
-        .filter((i) => !existingIds.has(i.id) && i.status !== 'watched')
-        .sort((a, b) => a.releaseYear - b.releaseYear);
-      return [...sorted, ...extra].slice(0, 10);
-    }
     return sorted.slice(0, 10);
   }, [items]);
 

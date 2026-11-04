@@ -57,6 +57,7 @@ export const ItemDetailsModal: React.FC = () => {
     setEditingItem,
     setIsAddModalOpen,
     deleteItem,
+    unwatchItem,
     updateItem,
     toggleWatchlist,
     toggleFavorite,
@@ -170,17 +171,25 @@ export const ItemDetailsModal: React.FC = () => {
         status: 'watched',
         inWatchlist: false,
         dateWatched: today,
+        rating: viewingItem.rating || 0,
+        notes: undefined,
       };
       setModalItem(newItem);
       addItem(newItem);
     } else if (isCurrentlyWatched) {
+      unwatchItem(viewingItem.id);
+      const { dateWatched: _dw, notes: _n, ...cleanProps } = viewingItem;
       const updated: MediaItem = {
-        ...viewingItem,
-        status: 'watch_later',
-        inWatchlist: false,
+        ...cleanProps,
+        status: viewingItem.inWatchlist ? 'watch_later' : 'none',
+        diaryLogs: [],
+        rating: 0,
+        currentSeason: 0,
+        animeCurrentSeason: 0,
+        dateWatched: undefined,
+        notes: undefined,
       };
       setModalItem(updated);
-      updateItem(updated);
     } else {
       const updated: MediaItem = {
         ...viewingItem,
@@ -192,8 +201,7 @@ export const ItemDetailsModal: React.FC = () => {
       updateItem(updated);
       logDiaryEntry(viewingItem.id, {
         watchedDate: today,
-        rating: viewingItem.rating || 4,
-        notes: 'Watched via Title Detail view.',
+        rating: viewingItem.rating || 0,
       });
     }
   };
@@ -203,6 +211,7 @@ export const ItemDetailsModal: React.FC = () => {
       // Add to library upon pressing Favorite
       const newItem: MediaItem = {
         ...viewingItem,
+        status: viewingItem.inWatchlist ? 'watch_later' : 'none',
         isFavorite: true,
       };
       setModalItem(newItem);
@@ -532,7 +541,16 @@ export const ItemDetailsModal: React.FC = () => {
                 }`}
               >
                 <Bookmark className={`w-4 h-4 ${viewingItem.inWatchlist ? 'fill-indigo-400 text-indigo-400' : 'text-slate-300'}`} />
-                <span className="truncate">{viewingItem.inWatchlist ? 'In Watchlist' : 'Watchlist'}</span>
+                <span className="truncate">
+                  {viewingItem.inWatchlist ? (
+                    <>
+                      <span className="sm:hidden">Saved</span>
+                      <span className="hidden sm:inline">In Watchlist</span>
+                    </>
+                  ) : (
+                    'Watchlist'
+                  )}
+                </span>
               </button>
 
               {/* 2. Watched Button */}
@@ -579,9 +597,14 @@ export const ItemDetailsModal: React.FC = () => {
               >
                 <FolderPlus className="w-4 h-4 text-purple-400 stroke-[2.2]" />
                 <span className="truncate">
-                  {viewingItem.customLists && viewingItem.customLists.length > 0
-                    ? `Custom (${viewingItem.customLists.length})`
-                    : 'Custom List'}
+                  {viewingItem.customLists && viewingItem.customLists.length > 0 ? (
+                    `Custom (${viewingItem.customLists.length})`
+                  ) : (
+                    <>
+                      <span className="sm:hidden">Lists</span>
+                      <span className="hidden sm:inline">Custom List</span>
+                    </>
+                  )}
                 </span>
               </button>
 

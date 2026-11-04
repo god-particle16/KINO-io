@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Calendar, RotateCcw } from 'lucide-react';
+import { Calendar, RotateCcw, Trash2 } from 'lucide-react';
 import { useMedia } from '../context/MediaContext.tsx';
 import { RatingStars } from './RatingStars.tsx';
 import { MediaCategory } from '../types/media.ts';
@@ -13,6 +13,7 @@ import { PosterImage } from './PosterImage.tsx';
 interface FlattenedDiaryRow {
   uniqueKey: string;
   mediaItem: ReturnType<typeof useMedia>['items'][0];
+  logId?: string;
   date: string; // YYYY-MM-DD
   rating: number;
   notes?: string;
@@ -21,9 +22,38 @@ interface FlattenedDiaryRow {
 }
 
 export const DiaryView: React.FC = () => {
-  const { items, setViewingItem, openAddModalWithPreset } = useMedia();
+  const { items, setViewingItem, openAddModalWithPreset, unwatchItem, updateItem } = useMedia();
 
   const [categoryFilter, setCategoryFilter] = useState<'all' | MediaCategory>('all');
+
+  const handleRemoveEntry = (e: React.MouseEvent, row: FlattenedDiaryRow) => {
+    e.stopPropagation();
+    const item = items.find((i) => i.id === row.mediaItem.id);
+    if (!item) return;
+
+    const logs = item.diaryLogs || [];
+    if (logs.length <= 1) {
+      unwatchItem(item.id);
+    } else {
+      const remainingLogs = row.logId
+        ? logs.filter((l) => l.id !== row.logId)
+        : logs.slice(1);
+
+      if (remainingLogs.length === 0) {
+        unwatchItem(item.id);
+      } else {
+        const latest = remainingLogs[0];
+        const updated = {
+          ...item,
+          diaryLogs: remainingLogs,
+          dateWatched: latest.watchedDate,
+          rating: latest.rating,
+          notes: latest.notes,
+        };
+        updateItem(updated);
+      }
+    }
+  };
 
   const allDiaryRows: FlattenedDiaryRow[] = [];
   items.forEach((item) => {
@@ -32,6 +62,7 @@ export const DiaryView: React.FC = () => {
         allDiaryRows.push({
           uniqueKey: `log-${item.id}-${log.id}`,
           mediaItem: item,
+          logId: log.id,
           date: log.watchedDate,
           rating: log.rating,
           notes: log.notes,
@@ -43,6 +74,7 @@ export const DiaryView: React.FC = () => {
       allDiaryRows.push({
         uniqueKey: `single-${item.id}`,
         mediaItem: item,
+        logId: undefined,
         date: item.dateWatched,
         rating: item.rating,
         notes: item.notes,
@@ -77,7 +109,7 @@ export const DiaryView: React.FC = () => {
       {/* Filter Bar */}
       <div className="flex items-center justify-between gap-4 text-xs">
         {/* Category Tabs */}
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {(
             [
               { id: 'all', label: 'All' },
@@ -214,14 +246,34 @@ export const DiaryView: React.FC = () => {
                             {/* MOBILE ONLY: Place star ratings DOWN below on mobile */}
                             <div className="sm:hidden mt-2 pt-1.5 border-t border-white/[0.04] flex items-center justify-between">
                               <span className="text-[11px] text-slate-500">Your Rating</span>
-                              <RatingStars rating={row.rating} size="sm" showNumeric />
+                              <div className="flex items-center gap-2.5">
+                                <RatingStars rating={row.rating} size="sm" showNumeric />
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleRemoveEntry(e, row)}
+                                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                                  title="Remove diary entry"
+                                  aria-label="Remove diary entry"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         {/* DESKTOP ONLY: Star Ratings positioned on the right */}
-                        <div className="hidden sm:flex shrink-0 items-center justify-end pl-3">
+                        <div className="hidden sm:flex shrink-0 items-center justify-end pl-3 gap-2.5">
                           <RatingStars rating={row.rating} size="sm" showNumeric />
+                          <button
+                            type="button"
+                            onClick={(e) => handleRemoveEntry(e, row)}
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer opacity-70 group-hover:opacity-100"
+                            title="Remove diary entry"
+                            aria-label="Remove diary entry"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
                     );

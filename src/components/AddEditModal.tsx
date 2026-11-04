@@ -114,6 +114,14 @@ export const AddEditModal: React.FC = () => {
 
     const effectiveLanguage = customLanguage.trim() || language;
 
+    const isUnwatching = Boolean(
+      (isEditMode &&
+        editingItem &&
+        editingItem.status === 'watched' &&
+        status !== 'watched') ||
+        status === 'none'
+    );
+
     const payload = {
       title: title.trim(),
       originalTitle: originalTitle.trim() || undefined,
@@ -121,18 +129,18 @@ export const AddEditModal: React.FC = () => {
       releaseYear: Number(releaseYear) || new Date().getFullYear(),
       language: effectiveLanguage,
       status,
-      rating: Number(rating) || 0,
-      dateWatched: watchedDate,
+      rating: isUnwatching ? 0 : Number(rating) || 0,
+      dateWatched: isUnwatching || status !== 'watched' ? undefined : watchedDate,
       notes: notes.trim() || undefined,
       isFavorite,
-      inWatchlist,
+      inWatchlist: status === 'watch_later' ? true : status === 'none' ? false : inWatchlist,
       posterUrl: posterUrl.trim() || undefined,
       overview: overview.trim() || undefined,
 
-      currentSeason: category === 'tv' ? Number(currentSeason) || 1 : undefined,
+      currentSeason: category === 'tv' ? (isUnwatching || status === 'none' ? 0 : Number(currentSeason) || 1) : undefined,
       totalSeasons: category === 'tv' ? Number(totalSeasons) || 1 : undefined,
 
-      animeCurrentSeason: category === 'anime' ? Number(animeCurrentSeason) || 1 : undefined,
+      animeCurrentSeason: category === 'anime' ? (isUnwatching || status === 'none' ? 0 : Number(animeCurrentSeason) || 1) : undefined,
       animeTotalSeasons: category === 'anime' ? Number(animeTotalSeasons) || 1 : undefined,
     };
 
@@ -140,6 +148,8 @@ export const AddEditModal: React.FC = () => {
       updateItem({
         ...editingItem,
         ...payload,
+        diaryLogs: isUnwatching ? [] : (editingItem.diaryLogs || []),
+        dateWatched: isUnwatching || status !== 'watched' ? undefined : watchedDate,
       });
     } else {
       addItem(payload);
@@ -387,6 +397,7 @@ export const AddEditModal: React.FC = () => {
                 onChange={(e) => setStatus(e.target.value as WatchStatus)}
                 className="w-full px-3 py-2 bg-[#0e111a] border border-white/[0.08] rounded-lg text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
               >
+                <option value="none" className="bg-[#0e111a]">None (Custom List / Favorites only)</option>
                 <option value="watching" className="bg-[#0e111a]">Watching</option>
                 <option value="watched" className="bg-[#0e111a]">Watched</option>
                 <option value="watch_later" className="bg-[#0e111a]">Watch List</option>

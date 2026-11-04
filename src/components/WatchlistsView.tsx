@@ -44,7 +44,7 @@ export const WatchlistsView: React.FC = () => {
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 text-xs">
         {/* Category buttons in Indigo Violet */}
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {(
             [
               { id: 'all', label: 'All' },
